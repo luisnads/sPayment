@@ -25,7 +25,9 @@ public class Main {
                 case 3:
                     break;
                 case 4:
+                    getSalary(ID, employees);
                     sellResult(input, employees);
+                    getSalary(ID, employees);
                     break;
                 case 5:
                     break;
@@ -104,5 +106,9 @@ public class Main {
         now = Double.parseDouble(employees[ID][3]);
         newValue = value*(Double.parseDouble(employees[ID][4])) + now;
         employees[ID][3] = Double.toString(newValue);
+    }
+    private static void getSalary(int ID, String[][] employees)
+    {
+        System.out.printf("%s\n", employees[ID][3]);
     }
 }
