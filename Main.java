@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=============== Seja bem-vindo ao Sistema Folha de Pagamento ===============");
+        System.out.println("=============== Seja bem-vindo ao Sistema Folha de Pagamento ===============\n");
 
         int ID = 0;
         boolean check = true;
@@ -44,13 +44,19 @@ public class Main {
                     break;
             }
         }
+
     }
     private static int header(Scanner input)
     {
+        System.out.println("[1] Adição de um novo funcionário.\n[2] Remoção de um funcionário.\n[3] Lançar um Cartão de Ponto.");
+        System.out.println("[4] Lançar um resultado de venda.\n[5] Lançar uma taxa de serviço.\n[6] Alterar detalhes de um funcionário.");
+        System.out.println("[7] Rodar a folha de pagamento para hoje.\n[8] Undo/Redo.\n[9] Agenda de Pagamento.\n[10] Criação de Novas Agendas de Pagamento.\n");
+        System.out.print("Insira a operação deseja realizar: ");
         return Integer.parseInt(input.nextLine());
     }
     private static void addEmployee(int ID, Scanner input, String[][] employees)
     {
+        System.out.println();
         employees[ID][0] = "true";
         System.out.print("Insira o nome do novo funcionário: ");
         employees[ID][1] = input.nextLine();
