@@ -6,26 +6,21 @@ public class PaymentSystem {
     private static void showEmployees(String[][] employees) {
         int i = 0;
         while(employees[i][0] != null) {
-            System.out.printf("%s ", employees[i][1]);
+            showEmployeeInfo(employees[i][0], employees);
             i++;
         }
-        System.out.println();
     }
     private static void showEmployeeInfo(String id, String[][] employees) {
         System.out.println();
         int index = getIndex(id, employees);
-        for(int i = 0; i < 11; i++) {
-            System.out.printf("Info %d | %s\n", i, employees[index][i]);
+        if(index == -1)
+            System.out.println("Funcionário não encontrado!\n");
+        else {
+            System.out.printf("ID | %s\n", employees[index][0]);
+            System.out.printf("Index | %d\n", index);
+            System.out.printf("Nome | %s\n", employees[index][1]);
+            System.out.printf("Agenda de Pagamento | %s\n\n", employees[index][5]);
         }
-        System.out.println();
-    }
-    private static String[][] getNewMatrix(int index, String[][] employees) {
-        while(employees[index+1][0] != null) {
-            employees[index] = employees[index + 1];
-            index++;
-        }
-        employees[index][0] = null;
-        return employees;
     }
     private static int getIndex(String id, String[][] employees) {
         int i = 0;
@@ -34,6 +29,8 @@ public class PaymentSystem {
                 break;
             i++;
         }
+        if(employees[i][0] == null)
+            return -1;
         return i;
     }
     private static void getEmployeeType(Scanner input, int index, String[][] employees) {
@@ -64,6 +61,62 @@ public class PaymentSystem {
                 break;
         }
     }
+    private static void fillCalendary(int[][] calendary, int day, int month, String dayInfo) {
+        int data = 0;
+        switch (dayInfo) {
+            case "domingo":
+                data = 1;
+                break;
+            case "segunda-feira":
+                data = 2;
+                break;
+            case "terça-feira":
+                data = 3;
+                break;
+            case "quarta-feira":
+                data = 4;
+                break;
+            case "quinta-feira":
+                data = 5;
+                break;
+            case "sexta-feira":
+                data = 6;
+                break;
+            case "sábado":
+                data = 7;
+                break;
+        }
+        while(month < 13) {
+            while(day < 32) {
+                if(((month%2) == 1 && month < 8)|| month == 8 || month == 10 || month == 12) {
+                    calendary[month][day] = data;
+                    data++;
+                }
+                else {
+                    if(month == 2 && day > 28)
+                        calendary[month][day] = -1;
+                    else if(day == 31)
+                        calendary[month][day] = -1;
+                    else {
+                        calendary[month][day] = data;
+                        data++;
+                    }
+                }
+                if(data == 8)
+                    data = 1;
+                day++;
+            }
+            day = 1;
+            month++;
+        }
+    }
+    private static void showCalendary(int[][] calendary) {
+        for(int i = 1; i < 13; i++) {
+            for(int j = 1; j < 32; j++) {
+                System.out.printf("%d/%d dia da semana : %d\n", j, i, calendary[i][j]);
+            }
+        }
+    }
 
     public static void main(String[] args) {
         System.out.println("=============== Seja bem-vindo ao Sistema Folha de Pagamento ===============\n");
@@ -73,6 +126,15 @@ public class PaymentSystem {
         Scanner input = new Scanner(System.in);
         String[][] employees = new String[100][12];
         String[] pSchedule = new String[20];
+        int[][] calendary = new int[13][32];
+        System.out.println("Insira data que o Sistema está sendo rodado inicialmente (ex.: 04/06/2019): ");
+        String[] timeArrayInfo = input.nextLine().split("/");
+        int day = Integer.parseInt(timeArrayInfo[0]);
+        int month = Integer.parseInt(timeArrayInfo[1]);
+        System.out.println("Insira o dia da semana que o Sistema está sendo rodado inicialmente em letras minúsculas: ");
+        String dayInfo = input.nextLine();
+        fillCalendary(calendary, day, month, dayInfo);
+        //showCalendary(calendary);
         //ID | Nome | Tipo | Salário | Comissão | Agenda de Pagamento | Sindicato | IDSindicato | TaxaSindicato | Endereço | TotalSalary | Método
 
         while(check) {
@@ -83,11 +145,8 @@ public class PaymentSystem {
                     index++;
                     break;
                 case 2:
-                    System.out.print("Insira o ID do funcionário que deseja remover: ");
-                    //auxID = input.nextLine();
-                    //int removedIndex = removeEmployee(auxID, employees);
-                    //employees = getNewMatrix(removedIndex, employees);
-                    //index--;
+                    removeEmployee(input, employees);
+                    index--;
                     break;
                 case 3:
                     hourlyCard(input, employees);
@@ -102,16 +161,19 @@ public class PaymentSystem {
                     setNewInfo(input, employees);
                     break;
                 case 7:
+
                     break;
                 case 8:
                     break;
                 case 9:
+                    setSchedule(input, pSchedule, employees);
                     break;
                 case 10:
                     newSchedule(input, pSchedule, iSchedule);
                     iSchedule++;
+                    break;
                 case 11:
-                    showEmployeeInfo("1", employees);
+                    showEmployees(employees);
                     break;
                 case 0:
                     check = false;
@@ -140,54 +202,64 @@ public class PaymentSystem {
         System.out.print("Insira o endereço do novo funcionário: ");
         employees[index][9]  = input.nextLine();
         employees[index][10] = "0";
-        System.out.print("Insira aqui o método de pagamento preferencial: ");
-        employees[index][11] = input.nextLine();
+        employees[index][11] = "Depósito em conta bancária";
         System.out.println();
     }
-    /*private static int removeEmployee(String id, String[][] employees)
-    {
-        int i = 0;
-        while(employees[i][0] != null) {
-            if(employees[i][0].equals(id)) {
-                employees[i][0] = null;
-                break;
-            }
-            i++;
+    private static void removeEmployee(Scanner input, String[][] employees) {
+        System.out.print("Insira o ID do funcionário que será removido: ");
+        String ID = input.nextLine();
+        int index = getIndex(ID, employees);
+        if(index == -1) {
+            System.out.println("Funcionário não encontrado!\n");
+            return;
         }
-        return i;
-    }*/
+        while(employees[index+1][0] != null) {
+            employees[index] = employees[index+1];
+            index++;
+        }
+        employees[index][0] = null;
+    }
     private static void sellResult(Scanner input, String[][] employees) {
 
         System.out.println("Insira o ID do funcionário que lançará o resultado da venda: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
+        if(index == -1)
+            System.out.println("Funcionário não encontrado!\n");
+        else {
+            System.out.println("Insira o valor do resultado da venda: ");
+            double value = Double.parseDouble(input.nextLine());
 
-        System.out.println("Insira o valor do resultado da venda: ");
-        double value = Double.parseDouble(input.nextLine());
-
-        employees[index][3] = Double.toString(value*(Double.parseDouble(employees[index][4])) + Double.parseDouble(employees[index][3]));
+            employees[index][3] = Double.toString(value*(Double.parseDouble(employees[index][4])) + Double.parseDouble(employees[index][3]));
+        }
     }
     private static void hourlyCard(Scanner input, String[][] employees) {
 
         System.out.print("Insira o ID do funcionário que lançará o cartão de ponto: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
+        if(index == -1)
+            System.out.println("Funcionário não encontrado!\n");
+        else {
+            System.out.print("Insira as informações do cartão de ponto (Quantidade de horas trabalhadas no dia): ");
+            String hours = input.nextLine();
 
-        System.out.print("Insira as informações do cartão de ponto (Quantidade de horas trabalhadas no dia): ");
-        String hours = input.nextLine();
-
-        employees[index][10] = Double.toString((Double.parseDouble(employees[index][10]) + Integer.parseInt(hours)*Double.parseDouble(employees[index][3])));
+            employees[index][10] = Double.toString((Double.parseDouble(employees[index][10]) + Integer.parseInt(hours)*Double.parseDouble(employees[index][3])));
+        }
     }
     private static void serviceTax(Scanner input, String[][] employees) {
 
         System.out.print("Insira o ID do funcionário que terá a taxa de serviço: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
+        if(index == -1)
+            System.out.println("Funcionário não encontrado!\n");
+        else {
+            System.out.print("Insira o valor da taxa de serviço: ");
+            String tax = input.nextLine();
 
-        System.out.print("Insira o valor da taxa de serviço: ");
-        String tax = input.nextLine();
-
-        employees[index][10] = Double.toString(Double.parseDouble(employees[index][10]) - Double.parseDouble(tax));
+            employees[index][10] = Double.toString(Double.parseDouble(employees[index][10]) - Double.parseDouble(tax));
+        }
     }
     private static void setNewInfo(Scanner input, String[][] employees) {
         int confirm;
@@ -195,47 +267,75 @@ public class PaymentSystem {
         System.out.print("Insira o ID do funcionário que terá as informações alteradas: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
-
-        System.out.println("Deseja mudar o nome do funcionário? [0] Sim | [1] Não");
-        confirm = Integer.parseInt(input.nextLine());
-        if(confirm == 0) {
-            System.out.print("Insira o novo nome do funcionário: ");
-            employees[index][1] = input.nextLine();
-        }
-
-        System.out.println("Deseja mudar o tipo do funcionário? [0] Sim | [1] Não");
-        confirm = Integer.parseInt(input.nextLine());
-        if(confirm == 0) {
-            getEmployeeType(input, index, employees);
-        }
-
-        System.out.println("Deseja mudar se o funcionário pertence ao sindicato? [0] Sim | [1] Não");
-        confirm = Integer.parseInt(input.nextLine());
-        if(confirm == 0) {
-            System.out.print("O funcionário pertence ao sindicato? [S]im | [N]ão");
-            if(input.nextLine().equals("S")) {
-                employees[index][6] = "Sim";
-                System.out.print("Insira o ID sindical do funcionário: ");
-                employees[index][7] = input.nextLine();
-                System.out.print("Insira a taxa sindical do funcionário em decimal (ex.: 0.2 = 20%: ");
-                employees[index][8] = input.nextLine();
+        if(index == -1)
+            System.out.println("Funcionário não encontrado!\n");
+        else {
+            System.out.println("Deseja mudar o nome do funcionário? [0] Sim | [1] Não");
+            confirm = Integer.parseInt(input.nextLine());
+            if (confirm == 0) {
+                System.out.print("Insira o novo nome do funcionário: ");
+                employees[index][1] = input.nextLine();
             }
-            else {
-                employees[index][6] = "Não";
-                employees[index][7] = "None";
-                employees[index][8] = "None";
-            }
-        }
 
-        System.out.println("Deseja mudar o endereço do funcionário? [0] Sim | [1] Não");
-        confirm = Integer.parseInt(input.nextLine());
-        if(confirm == 0) {
-            System.out.print("Insira o novo endereço do funcionário: ");
-            employees[index][9] = input.nextLine();
+            System.out.println("Deseja mudar o tipo do funcionário? [0] Sim | [1] Não");
+            confirm = Integer.parseInt(input.nextLine());
+            if (confirm == 0) {
+                getEmployeeType(input, index, employees);
+            }
+
+            System.out.println("Deseja mudar se o funcionário pertence ao sindicato? [0] Sim | [1] Não");
+            confirm = Integer.parseInt(input.nextLine());
+            if (confirm == 0) {
+                System.out.print("O funcionário pertence ao sindicato? [S]im | [N]ão");
+                if (input.nextLine().equals("S")) {
+                    employees[index][6] = "Sim";
+                    System.out.print("Insira o ID sindical do funcionário: ");
+                    employees[index][7] = input.nextLine();
+                    System.out.print("Insira a taxa sindical do funcionário em decimal (ex.: 0.2 = 20%: ");
+                    employees[index][8] = input.nextLine();
+                } else {
+                    employees[index][6] = "Não";
+                    employees[index][7] = "None";
+                    employees[index][8] = "None";
+                }
+            }
+
+            System.out.println("Deseja mudar o endereço do funcionário? [0] Sim | [1] Não");
+            confirm = Integer.parseInt(input.nextLine());
+            if (confirm == 0) {
+                System.out.print("Insira o novo endereço do funcionário: ");
+                employees[index][9] = input.nextLine();
+            }
+
+            System.out.println("Deseja mudar o método de pagamento do funcionário? [0] Sim | [1] Não");
+            confirm = Integer.parseInt(input.nextLine());
+            if (confirm == 0) {
+                System.out.print("Insira o novo método de pagamento: ");
+                employees[index][11] = input.nextLine();
+            }
         }
     }
     private static void newSchedule(Scanner input, String[] pSchedule, int iSchedule) {
         System.out.print("Insira a nova agenda de pagamento: ");
         pSchedule[iSchedule] = input.nextLine();
+    }
+    private static void setSchedule(Scanner input, String[] pSchedule, String[][] employees) {
+        int i = 0;
+        System.out.print("Insira o ID do funcionário que terá a agenda de pagamento modificada: ");
+        String ID = input.nextLine();
+        int index = getIndex(ID, employees);
+
+        System.out.println("As agendas de pagamento disponíveis são:");
+        System.out.println("→ semanal 1 sexta\n→ mensal $\n→ semanal 2 sexta");
+        while(i < 20 && pSchedule[i] != null) {
+            System.out.printf("→ %s\n",pSchedule[i]);
+            i++;
+        }
+
+        System.out.print("Insira nova agenda de pagamento desejada: ");
+        employees[index][5] = input.nextLine();
+    }
+    private static void payRoll(String[][] employees, int[][] calendary) {
+
     }
 }
