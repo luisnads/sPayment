@@ -110,10 +110,17 @@ public class PaymentSystem {
             month++;
         }
     }
-    private static void showCalendary(int[][] calendary) {
-        for(int i = 1; i < 13; i++) {
-            for(int j = 1; j < 32; j++) {
-                System.out.printf("%d/%d dia da semana : %d\n", j, i, calendary[i][j]);
+    private static void copyMatrix(String[][][] undoRedo, String[][] employees, int undoCount) {
+        for(int i = 0; i < 100; i++) {
+            for(int j = 0; j < 12; j++) {
+                undoRedo[i][j][undoCount] = employees[i][j];
+            }
+        }
+    }
+    private static void restoreMatrix(String[][] employees, String[][][] undoRedo, int undoCount) {
+        for(int i = 0; i < 100; i++) {
+            for(int j = 0; j < 12; j++) {
+                employees[i][j] = undoRedo[i][j][undoCount];
             }
         }
     }
@@ -121,11 +128,14 @@ public class PaymentSystem {
     public static void main(String[] args) {
         System.out.println("=============== Seja bem-vindo ao Sistema Folha de Pagamento ===============\n");
 
-        int id = 1, index = 0, iSchedule = 0;
+        int id = 1, index = 0, iSchedule = 0, dayCount = 0, undoCount = 0, operation;
+        int[] lastOp = new int[10];
         boolean check = true;
         Scanner input = new Scanner(System.in);
         String[][] employees = new String[100][12];
+        String[][][] undoRedo = new String[100][12][10];
         String[] pSchedule = new String[20];
+
         int[][] calendary = new int[13][32];
         System.out.println("Insira data que o Sistema está sendo rodado inicialmente (ex.: 04/06/2019): ");
         String[] timeArrayInfo = input.nextLine().split("/");
@@ -134,11 +144,19 @@ public class PaymentSystem {
         System.out.println("Insira o dia da semana que o Sistema está sendo rodado inicialmente em letras minúsculas: ");
         String dayInfo = input.nextLine();
         fillCalendary(calendary, day, month, dayInfo);
-        //showCalendary(calendary);
+
         //ID | Nome | Tipo | Salário | Comissão | Agenda de Pagamento | Sindicato | IDSindicato | TaxaSindicato | Endereço | TotalSalary | Método
 
         while(check) {
-            switch(header(input)) {
+            System.out.printf("\nData: %d/%d\n\n", day, month);
+            operation = header(input);
+            if(operation > 0 && operation < 8) {
+                copyMatrix(undoRedo, employees, undoCount);
+                lastOp[undoCount++] = operation;
+                if(undoCount == 10)
+                    undoCount = 0;
+            }
+            switch(operation) {
                 case 1:
                     addEmployee(index, id, input, employees);
                     id++;
@@ -161,9 +179,73 @@ public class PaymentSystem {
                     setNewInfo(input, employees);
                     break;
                 case 7:
-
+                    payRoll(day, month, employees, calendary, (dayCount-7));
+                    day++;
+                    dayCount++;
+                    if(day > 31 || calendary[month][day] == -1) {
+                        day = 1;
+                        month++;
+                    }
+                    if(dayCount == 14)
+                        dayCount = 0;
                     break;
                 case 8:
+                    System.out.println("[0] Undo | [1] Redo");
+                    int uCheck = Integer.parseInt(input.nextLine());
+                    if(uCheck == 0) {
+                        if(lastOp[undoCount] == 1) {
+                            restoreMatrix(employees, undoRedo, undoCount);
+                            if(--undoCount < 0)
+                                undoCount = 9;
+                            id--;
+                            index--;
+                        }
+                        else if(lastOp[undoCount] == 2) {
+                            restoreMatrix(employees, undoRedo, undoCount);
+                            if(--undoCount < 0)
+                                undoCount = 9;
+                            index++;
+                        }
+                        else if(lastOp[undoCount] == 7) {
+                            restoreMatrix(employees, undoRedo, undoCount);
+                            if(--undoCount < 0)
+                                undoCount = 9;
+                            day--;
+                            dayCount--;
+                        }
+                        else {
+                            restoreMatrix(employees, undoRedo, undoCount);
+                            if(--undoCount < 0)
+                                undoCount = 9;
+                        }
+                    }
+                    else {
+                        if(lastOp[undoCount+1] == 1) {
+                            restoreMatrix(employees, undoRedo, (undoCount+1));
+                            if(++undoCount > 9)
+                                undoCount = 0;
+                            id++;
+                            index++;
+                        }
+                        else if(lastOp[undoCount+1] == 2) {
+                            restoreMatrix(employees, undoRedo, (undoCount+1));
+                            if(++undoCount > 0)
+                                undoCount = 0;
+                            index--;
+                        }
+                        else if(lastOp[undoCount+1] == 7) {
+                            restoreMatrix(employees, undoRedo, (undoCount+1));
+                            if(++undoCount > 9)
+                                undoCount = 0;
+                            day++;
+                            dayCount++;
+                        }
+                        else {
+                            restoreMatrix(employees, undoRedo, (undoCount+1));
+                            if(++undoCount > 9)
+                                undoCount = 0;
+                        }
+                    }
                     break;
                 case 9:
                     setSchedule(input, pSchedule, employees);
@@ -201,7 +283,10 @@ public class PaymentSystem {
         employees[index][8] = "None";
         System.out.print("Insira o endereço do novo funcionário: ");
         employees[index][9]  = input.nextLine();
-        employees[index][10] = "0";
+        if(employees[index][2].equals("2"))
+            employees[index][10] = employees[index][3];
+        else
+            employees[index][10] = "0";
         employees[index][11] = "Depósito em conta bancária";
         System.out.println();
     }
@@ -214,27 +299,30 @@ public class PaymentSystem {
             return;
         }
         while(employees[index+1][0] != null) {
-            employees[index] = employees[index+1];
+            for(int i = 0; i < 12; i++) {
+                employees[index][i] = employees[index+1][i];
+            }
             index++;
         }
         employees[index][0] = null;
     }
     private static void sellResult(Scanner input, String[][] employees) {
 
-        System.out.println("Insira o ID do funcionário que lançará o resultado da venda: ");
+        System.out.print("Insira o ID do funcionário que lançará o resultado da venda: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
         if(index == -1)
             System.out.println("Funcionário não encontrado!\n");
         else {
-            System.out.println("Insira o valor do resultado da venda: ");
+            System.out.print("Insira o valor do resultado da venda: ");
             double value = Double.parseDouble(input.nextLine());
 
-            employees[index][3] = Double.toString(value*(Double.parseDouble(employees[index][4])) + Double.parseDouble(employees[index][3]));
+            employees[index][10] = Double.toString(value*(Double.parseDouble(employees[index][4]))
+                                                    + Double.parseDouble(employees[index][10]));
         }
     }
     private static void hourlyCard(Scanner input, String[][] employees) {
-
+        double extra = 0;
         System.out.print("Insira o ID do funcionário que lançará o cartão de ponto: ");
         String ID = input.nextLine();
         int index = getIndex(ID, employees);
@@ -243,8 +331,10 @@ public class PaymentSystem {
         else {
             System.out.print("Insira as informações do cartão de ponto (Quantidade de horas trabalhadas no dia): ");
             String hours = input.nextLine();
-
-            employees[index][10] = Double.toString((Double.parseDouble(employees[index][10]) + Integer.parseInt(hours)*Double.parseDouble(employees[index][3])));
+            if(Integer.parseInt(hours) > 8) {
+                extra = (Integer.parseInt(hours)-8)*(Double.parseDouble(employees[index][3]))*1.5;
+            }
+            employees[index][10] = Double.toString((extra + Double.parseDouble(employees[index][10]) + Integer.parseInt(hours)*Double.parseDouble(employees[index][3])));
         }
     }
     private static void serviceTax(Scanner input, String[][] employees) {
@@ -286,12 +376,12 @@ public class PaymentSystem {
             System.out.println("Deseja mudar se o funcionário pertence ao sindicato? [0] Sim | [1] Não");
             confirm = Integer.parseInt(input.nextLine());
             if (confirm == 0) {
-                System.out.print("O funcionário pertence ao sindicato? [S]im | [N]ão");
+                System.out.println("O funcionário pertence ao sindicato? [S]im | [N]ão");
                 if (input.nextLine().equals("S")) {
                     employees[index][6] = "Sim";
                     System.out.print("Insira o ID sindical do funcionário: ");
                     employees[index][7] = input.nextLine();
-                    System.out.print("Insira a taxa sindical do funcionário em decimal (ex.: 0.2 = 20%: ");
+                    System.out.print("Insira a taxa sindical do funcionário em decimal (ex.: 0.2 = 20%): ");
                     employees[index][8] = input.nextLine();
                 } else {
                     employees[index][6] = "Não";
@@ -335,7 +425,103 @@ public class PaymentSystem {
         System.out.print("Insira nova agenda de pagamento desejada: ");
         employees[index][5] = input.nextLine();
     }
-    private static void payRoll(String[][] employees, int[][] calendary) {
+    private static String totalSalary(String[][] employees, int i) {
+        String totalSalaryA;
 
+        if(Integer.parseInt(employees[i][2]) == 3) {
+            totalSalaryA = employees[i][3];
+        }
+        else {
+            totalSalaryA = employees[i][10];
+        }
+
+        if(employees[i][6].equals("Sim")) {
+            totalSalaryA = Double.toString((Double.parseDouble(totalSalaryA)
+                                            - Double.parseDouble(totalSalaryA)*Double.parseDouble(employees[i][8])));
+
+        }
+        return totalSalaryA;
+
+    }
+    private static void auxPayRoll(String[][] employees, int i, int[][] calendary, int day, int month, String[] paySchedule) {
+        double forPay = Double.parseDouble(totalSalary(employees, i));
+        System.out.printf("ForPay %.2f\n", forPay);
+        if(Integer.parseInt(employees[i][2]) != 1) {
+            forPay *= Double.parseDouble(paySchedule[1])/4;
+            if(Integer.parseInt(employees[i][2]) == 3)
+                forPay += Double.parseDouble(employees[i][10]);
+        }
+        switch (paySchedule[2]) {
+            case "segunda":
+                if(calendary[month][day] == 2) {
+                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                       employees[i][0], forPay, employees[i][11]);
+                    if(Integer.parseInt(employees[i][2]) != 2)
+                        employees[i][10] = "0";
+                }
+                break;
+            case "terça":
+                if(calendary[month][day] == 3) {
+                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                       employees[i][0], forPay, employees[i][11]);
+                    if(Integer.parseInt(employees[i][2]) != 2)
+                        employees[i][10] = "0";
+                }
+                break;
+            case "quarta":
+                if(calendary[month][day] == 4) {
+                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                       employees[i][0], forPay, employees[i][11]);
+                    if(Integer.parseInt(employees[i][2]) != 2)
+                        employees[i][10] = "0";
+                }
+                break;
+            case "quinta":
+                if(calendary[month][day] == 5) {
+                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                       employees[i][0], forPay, employees[i][11]);
+                    if(Integer.parseInt(employees[i][2]) != 2)
+                        employees[i][10] = "0";
+                }
+                break;
+            case "sexta":
+                if(calendary[month][day] == 6) {
+                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                       employees[i][0], forPay, employees[i][11]);
+                    if(Integer.parseInt(employees[i][2]) != 2)
+                        employees[i][10] = "0";
+                }
+                break;
+        }
+    }
+    private static void payRoll(int day, int month, String[][] employees, int[][] calendary, int dayCount) {
+        int i = 0, lDay = 0;
+        for (int j = 31; j > 0; j--) {
+            if (calendary[month][j] > 1 && calendary[month][j] < 7) {
+                lDay = j;
+                break;
+            }
+        }
+
+        while(employees[i][0] != null) {
+            String[] paySchedule = employees[i][5].split(" ");
+            if(paySchedule[0].equals("mensal") && paySchedule[1].equals("$") && day == lDay) {
+                System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                                   employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
+            }
+            else if(!paySchedule[1].equals("$") && paySchedule[0].equals("mensal") && day == Integer.parseInt(paySchedule[1])) {
+                System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                                   employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
+            }
+            else if(paySchedule[0].equals("semanal")) {
+                if(paySchedule[1].equals("1")) {
+                    auxPayRoll(employees, i, calendary, day, month, paySchedule);
+                }
+                else if(paySchedule[1].equals("2") && dayCount >= 0) {
+                    auxPayRoll(employees, i, calendary, day, month, paySchedule);
+                }
+            }
+            i++;
+        }
     }
 }
