@@ -110,17 +110,17 @@ public class PaymentSystem {
             month++;
         }
     }
-    private static void copyMatrix(String[][][] undoRedo, String[][] employees, int undoCount) {
+    private static void copyMatrix(String[][][] undo, String[][] employees, int undoCount) {
         for(int i = 0; i < 100; i++) {
             for(int j = 0; j < 12; j++) {
-                undoRedo[i][j][undoCount] = employees[i][j];
+                undo[i][j][undoCount] = employees[i][j];
             }
         }
     }
-    private static void restoreMatrix(String[][] employees, String[][][] undoRedo, int undoCount) {
+    private static void restoreMatrix(String[][] employees, String[][][] undo, int undoCount) {
         for(int i = 0; i < 100; i++) {
             for(int j = 0; j < 12; j++) {
-                employees[i][j] = undoRedo[i][j][undoCount];
+                employees[i][j] = undo[i][j][undoCount];
             }
         }
     }
@@ -133,7 +133,8 @@ public class PaymentSystem {
         boolean check = true;
         Scanner input = new Scanner(System.in);
         String[][] employees = new String[100][12];
-        String[][][] undoRedo = new String[100][12][10];
+        String[][][] undo = new String[100][12][10];
+        String[][][] redo = new String[100][12][10];
         String[] pSchedule = new String[20];
 
         int[][] calendary = new int[13][32];
@@ -151,16 +152,14 @@ public class PaymentSystem {
             System.out.printf("\nData: %d/%d\n\n", day, month);
             operation = header(input);
             if(operation > 0 && operation < 8) {
-                copyMatrix(undoRedo, employees, undoCount);
-                lastOp[undoCount++] = operation;
+                lastOp[undoCount] = operation;
+                copyMatrix(undo, employees, undoCount++);
                 if(undoCount == 10)
                     undoCount = 0;
             }
             switch(operation) {
                 case 1:
-                    addEmployee(index, id, input, employees);
-                    id++;
-                    index++;
+                    addEmployee(index++, id++, input, employees);
                     break;
                 case 2:
                     removeEmployee(input, employees);
@@ -190,62 +189,45 @@ public class PaymentSystem {
                         dayCount = 0;
                     break;
                 case 8:
-                    System.out.println("[0] Undo | [1] Redo");
+                    System.out.println("[1] Undo | [2] Redo");
                     int uCheck = Integer.parseInt(input.nextLine());
-                    if(uCheck == 0) {
-                        if(lastOp[undoCount] == 1) {
-                            restoreMatrix(employees, undoRedo, undoCount);
-                            if(--undoCount < 0)
-                                undoCount = 9;
-                            id--;
+                    if(uCheck == 1 && undoCount > 0) {
+                        if(lastOp[undoCount-1] == 1) {
+                            restoreMatrix(employees, undo, (undoCount-1));
                             index--;
+                            id--;
                         }
-                        else if(lastOp[undoCount] == 2) {
-                            restoreMatrix(employees, undoRedo, undoCount);
-                            if(--undoCount < 0)
-                                undoCount = 9;
+                        else if(lastOp[undoCount-1] == 2) {
+                            restoreMatrix(employees, undo, (undoCount-1));
                             index++;
                         }
-                        else if(lastOp[undoCount] == 7) {
-                            restoreMatrix(employees, undoRedo, undoCount);
-                            if(--undoCount < 0)
-                                undoCount = 9;
-                            day--;
+                        else if(lastOp[undoCount-1] == 7) {
+                            restoreMatrix(employees, undo, (undoCount-1));
+                            if(day == 1) {
+                                month--;
+                                if(((month%2) == 1 && month < 8)|| month == 8 || month == 10 || month == 12) {
+                                    day = 31;
+                                }
+                                else {
+                                    if(month == 3)
+                                        day = 28;
+                                    else
+                                        day = 30;
+                                }
+                            }
+                            else {
+                                day--;
+                            }
                             dayCount--;
                         }
                         else {
-                            restoreMatrix(employees, undoRedo, undoCount);
-                            if(--undoCount < 0)
-                                undoCount = 9;
+                            restoreMatrix(employees, undo, undoCount);
                         }
+                        undoCount--;
+                        if(undoCount < 0)
+                            undoCount = 9;
                     }
-                    else {
-                        if(lastOp[undoCount+1] == 1) {
-                            restoreMatrix(employees, undoRedo, (undoCount+1));
-                            if(++undoCount > 9)
-                                undoCount = 0;
-                            id++;
-                            index++;
-                        }
-                        else if(lastOp[undoCount+1] == 2) {
-                            restoreMatrix(employees, undoRedo, (undoCount+1));
-                            if(++undoCount > 0)
-                                undoCount = 0;
-                            index--;
-                        }
-                        else if(lastOp[undoCount+1] == 7) {
-                            restoreMatrix(employees, undoRedo, (undoCount+1));
-                            if(++undoCount > 9)
-                                undoCount = 0;
-                            day++;
-                            dayCount++;
-                        }
-                        else {
-                            restoreMatrix(employees, undoRedo, (undoCount+1));
-                            if(++undoCount > 9)
-                                undoCount = 0;
-                        }
-                    }
+
                     break;
                 case 9:
                     setSchedule(input, pSchedule, employees);
