@@ -1,4 +1,4 @@
-package Code;
+package com.company;
 import java.util.Scanner;
 
 public class PaymentSystem {
@@ -300,7 +300,7 @@ public class PaymentSystem {
             double value = Double.parseDouble(input.nextLine());
 
             employees[index][10] = Double.toString(value*(Double.parseDouble(employees[index][4]))
-                                                    + Double.parseDouble(employees[index][10]));
+                    + Double.parseDouble(employees[index][10]));
         }
     }
     private static void hourlyCard(Scanner input, String[][] employees) {
@@ -311,12 +311,22 @@ public class PaymentSystem {
         if(index == -1)
             System.out.println("Funcionário não encontrado!\n");
         else {
-            System.out.print("Insira as informações do cartão de ponto (Quantidade de horas trabalhadas no dia): ");
-            String hours = input.nextLine();
-            if(Integer.parseInt(hours) > 8) {
-                extra = (Integer.parseInt(hours)-8)*(Double.parseDouble(employees[index][3]))*1.5;
-            }
-            employees[index][10] = Double.toString((extra + Double.parseDouble(employees[index][10]) + Integer.parseInt(hours)*Double.parseDouble(employees[index][3])));
+            System.out.println("Insira as informações do cartão de ponto no formato (16:32 (horas e minutos))");
+            System.out.print("Horário de entrada do funcionário: ");
+            String[] hoursIn = input.nextLine().split(":");
+            System.out.print("Horário de saída do funcionário: ");
+            String[] hoursOut = input.nextLine().split(":");
+            int hEntrada = Integer.parseInt(hoursIn[0]);
+            int hSaida = Integer.parseInt(hoursOut[0]);
+            int hTotal = hSaida - hEntrada;
+            double minTotal = (Integer.parseInt(hoursOut[1])-Integer.parseInt(hoursIn[1]))/60.0;
+            if(minTotal < 0)
+                minTotal *= -1;
+            if(hTotal > 8)
+                extra = (hTotal-8)*0.5*Double.parseDouble(employees[index][3]);
+            double total = (minTotal + hTotal)*Double.parseDouble(employees[index][3]);
+
+            employees[index][10] = Double.toString((total + Double.parseDouble(employees[index][10]) +  extra));
         }
     }
     private static void serviceTax(Scanner input, String[][] employees) {
@@ -419,15 +429,20 @@ public class PaymentSystem {
 
         if(employees[i][6].equals("Sim")) {
             totalSalaryA = Double.toString((Double.parseDouble(totalSalaryA)
-                                            - Double.parseDouble(totalSalaryA)*Double.parseDouble(employees[i][8])));
+                    - Double.parseDouble(totalSalaryA)*Double.parseDouble(employees[i][8])));
 
         }
         return totalSalaryA;
 
     }
+    private static void payEmployee(String[][] employees, double forPay, int i) {
+        System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
+                employees[i][0], forPay, employees[i][11]);
+        if(Integer.parseInt(employees[i][2]) != 2)
+            employees[i][10] = "0";
+    }
     private static void auxPayRoll(String[][] employees, int i, int[][] calendary, int day, int month, String[] paySchedule) {
         double forPay = Double.parseDouble(totalSalary(employees, i));
-        System.out.printf("ForPay %.2f\n", forPay);
         if(Integer.parseInt(employees[i][2]) != 1) {
             forPay *= Double.parseDouble(paySchedule[1])/4;
             if(Integer.parseInt(employees[i][2]) == 3)
@@ -435,44 +450,24 @@ public class PaymentSystem {
         }
         switch (paySchedule[2]) {
             case "segunda":
-                if(calendary[month][day] == 2) {
-                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                       employees[i][0], forPay, employees[i][11]);
-                    if(Integer.parseInt(employees[i][2]) != 2)
-                        employees[i][10] = "0";
-                }
+                if(calendary[month][day] == 2)
+                    payEmployee(employees, forPay, i);
                 break;
             case "terça":
-                if(calendary[month][day] == 3) {
-                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                       employees[i][0], forPay, employees[i][11]);
-                    if(Integer.parseInt(employees[i][2]) != 2)
-                        employees[i][10] = "0";
-                }
+                if(calendary[month][day] == 3)
+                    payEmployee(employees, forPay, i);
                 break;
             case "quarta":
-                if(calendary[month][day] == 4) {
-                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                       employees[i][0], forPay, employees[i][11]);
-                    if(Integer.parseInt(employees[i][2]) != 2)
-                        employees[i][10] = "0";
-                }
+                if(calendary[month][day] == 4)
+                    payEmployee(employees, forPay, i);
                 break;
             case "quinta":
-                if(calendary[month][day] == 5) {
-                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                       employees[i][0], forPay, employees[i][11]);
-                    if(Integer.parseInt(employees[i][2]) != 2)
-                        employees[i][10] = "0";
-                }
+                if(calendary[month][day] == 5)
+                    payEmployee(employees, forPay, i);
                 break;
             case "sexta":
-                if(calendary[month][day] == 6) {
-                    System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                       employees[i][0], forPay, employees[i][11]);
-                    if(Integer.parseInt(employees[i][2]) != 2)
-                        employees[i][10] = "0";
-                }
+                if(calendary[month][day] == 6)
+                    payEmployee(employees, forPay, i);
                 break;
         }
     }
@@ -484,16 +479,15 @@ public class PaymentSystem {
                 break;
             }
         }
-
         while(employees[i][0] != null) {
             String[] paySchedule = employees[i][5].split(" ");
             if(paySchedule[0].equals("mensal") && paySchedule[1].equals("$") && day == lDay) {
                 System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                                   employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
+                        employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
             }
             else if(!paySchedule[1].equals("$") && paySchedule[0].equals("mensal") && day == Integer.parseInt(paySchedule[1])) {
                 System.out.printf("O funcionário %s de ID [%s] recebeu %.2f via %s\n", employees[i][1],
-                                   employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
+                        employees[i][0], Double.parseDouble(totalSalary(employees, i)), employees[i][11]);
             }
             else if(paySchedule[0].equals("semanal")) {
                 if(paySchedule[1].equals("1")) {
