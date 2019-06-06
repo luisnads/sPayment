@@ -12,6 +12,10 @@ Quando for informado um menu de opções, informar o número correspondente ao d
 
 Quando for informado uma porcentagem de taxa ou similar, inserir em formato decimal da porcentagem.
 
+Funcionários não são pagos em dias que não são úteis.
+
+Não podem ser feitas Agendas de Pagamentos para dias de sábados e domingos.
+
 ### Operações do Sistema
 #### Operação 1 – Adição de um funcionário
 Deve-se informar o que for pedido.
